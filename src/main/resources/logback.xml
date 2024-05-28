@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <property name="log.path" value="logs"/>
+  <property name="console.log.pattern" value="%red(%d{yyyy-MM-dd HH:mm:ss.SSS}) %green([%thread]) %highlight(%level) %boldMagenta(%logger.%method -line:%line-%n) %msg%n"/>
+  <property name="file.log.pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %level %logger.%method -line:%line-%n %msg%n"/>
+
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${console.log.pattern}</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="console_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${log.path}/console.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${log.path}/console.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>1</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>${file.log.pattern}</pattern>
+      <charset>utf-8</charset>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>INFO</level>
+    </filter>
+  </appender>
+
+  <appender name="error_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${log.path}/error.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${log.path}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+      <maxHistory>60</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>${file.log.pattern}</pattern>
+      <charset>utf-8</charset>
+    </encoder>
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>ERROR</level>
+    </filter>
+  </appender>
+
+  <appender name="async_console_file" class="ch.qos.logback.classic.AsyncAppender">
+    <discardingThreshold>0</discardingThreshold>
+    <queueSize>512</queueSize>
+    <appender-ref ref="console_file"/>
+  </appender>
+  <appender name="async_error_file" class="ch.qos.logback.classic.AsyncAppender">
+    <discardingThreshold>0</discardingThreshold>
+    <queueSize>512</queueSize>
+    <appender-ref ref="error_file"/>
+  </appender>
+
+  <logger name="cn.qianjingtong" level="info"/>
+  <logger name="org.springframework" level="warn"/>
+
+  <root level="info">
+    <appender-ref ref="console"/>
+    <appender-ref ref="async_console_file"/>
+    <appender-ref ref="async_error_file"/>
+  </root>
+
+</configuration>
