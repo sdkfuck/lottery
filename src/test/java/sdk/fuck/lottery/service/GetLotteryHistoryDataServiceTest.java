@@ -16,4 +16,9 @@ class GetLotteryHistoryDataServiceTest {
   void ssqGetAndWriteCsv() {
     getLotteryHistoryDataService.ssqGetAndWriteCsv();
   }
+
+  @Test
+  void dltGetAndWriteCsv() {
+    getLotteryHistoryDataService.dltGetAndWriteCsv();
+  }
 }
