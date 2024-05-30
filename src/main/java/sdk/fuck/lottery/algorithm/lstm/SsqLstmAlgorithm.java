@@ -40,8 +40,6 @@ import java.util.List;
 @Service
 public class SsqLstmAlgorithm extends SsqAlgorithm {
 
-  private static final int EPOCHS = 100; // Number of training iterations
-
   /**
    * Trains the LSTM model with the provided SSQ lottery data and saves the model.
    *
@@ -86,7 +84,7 @@ public class SsqLstmAlgorithm extends SsqAlgorithm {
         normalizer.transform(dataSet);
 
         // Train the model
-        for (int i = 0; i < EPOCHS; i++) {
+        for (int i = 0; i < numSamples; i++) {
           net.fit(dataSet);
         }
 
