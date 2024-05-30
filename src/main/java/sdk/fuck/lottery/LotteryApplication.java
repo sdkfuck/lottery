@@ -11,10 +11,18 @@ import java.awt.*;
 import java.net.URI;
 import java.time.LocalDateTime;
 
+/**
+ * Main class for the Lottery Application.
+ */
 @SpringBootApplication
 public class LotteryApplication extends SpringBootServletInitializer {
   private static final Logger LOGGER = LoggerFactory.getLogger(LotteryApplication.class);
 
+  /**
+   * Main method to start the Spring Boot application.
+   *
+   * @param args Command line arguments.
+   */
   public static void main(String[] args) {
     SpringApplication.run(LotteryApplication.class, args);
     try {
@@ -22,13 +30,18 @@ public class LotteryApplication extends SpringBootServletInitializer {
       Desktop.getDesktop().browse(new URI("http://localhost:8080"));
     } catch (Exception ignore) {
     }
-    LOGGER.info("(♥◠‿◠)ﾉﾞ  启动成功   ლ(´ڡ`ლ)ﾞ  \n启动时间：{}\n", LocalDateTime.now());
+    LOGGER.info("(♥◠‿◠)ﾉﾞ  Application started successfully   ლ(´ڡ`ლ)ﾞ  \nStartup time: {}\n", LocalDateTime.now());
   }
 
-  // 打 WAR 包的配置
+  /**
+   * Configuration for building WAR package.
+   *
+   * @param application SpringApplicationBuilder instance.
+   * @return SpringApplicationBuilder configured for the application.
+   */
   @Override
   protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
     return application.sources(LotteryApplication.class);
   }
-
 }
+

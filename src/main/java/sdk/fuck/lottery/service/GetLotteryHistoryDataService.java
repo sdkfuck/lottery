@@ -19,6 +19,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -92,7 +93,8 @@ public class GetLotteryHistoryDataService {
       }
       return data;
     } catch (IOException | ReflectiveOperationException e) {
-      throw new RuntimeException(e);
+      log.error("Error fetching lottery data from URL: {}", url, e);
+      return Collections.emptyList();
     }
   }
 
@@ -124,16 +126,13 @@ public class GetLotteryHistoryDataService {
       return;
     }
 
-    // Get the project root directory
     String projectRoot = Paths.get("").toAbsolutePath().toString();
-    // Create the data directory if it doesn't exist
     File dataDir = new File(projectRoot, "data");
     if (!dataDir.exists() && !dataDir.mkdirs()) {
       log.error("Failed to create data directory.");
       return;
     }
 
-    // Create the CSV file in the data directory
     File csvFile = new File(dataDir, fileName);
 
     try (FileWriter writer = new FileWriter(csvFile)) {
@@ -142,7 +141,7 @@ public class GetLotteryHistoryDataService {
         writer.append(row.toCsvLine()).append("\n");
       }
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      log.error("Error writing data to CSV file: {}", fileName, e);
     }
   }
 }
