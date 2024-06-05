@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logback 配置文件，用于定义日志记录的格式、级别和输出目标。
+-->
 <configuration>
+  <!-- 定义日志路径属性 -->
   <property name="log.path" value="logs"/>
+  <!-- 定义控制台日志输出模式 -->
   <property name="console.log.pattern" value="%red(%d{yyyy-MM-dd HH:mm:ss.SSS}) %green([%thread]) %highlight(%level) %boldMagenta(%logger.%method -line:%line-%n) %msg%n"/>
+  <!-- 定义文件日志输出模式 -->
   <property name="file.log.pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %level %logger.%method -line:%line-%n %msg%n"/>
 
+  <!-- 控制台日志输出 -->
   <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>${console.log.pattern}</pattern>
     </encoder>
   </appender>
 
+  <!-- 控制台日志文件输出（带滚动） -->
   <appender name="console_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${log.path}/console.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -25,6 +33,7 @@
     </filter>
   </appender>
 
+  <!-- 错误日志文件输出（带滚动） -->
   <appender name="error_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${log.path}/error.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -40,24 +49,28 @@
     </filter>
   </appender>
 
+  <!-- 异步控制台日志文件输出 -->
   <appender name="async_console_file" class="ch.qos.logback.classic.AsyncAppender">
     <discardingThreshold>0</discardingThreshold>
     <queueSize>512</queueSize>
     <appender-ref ref="console_file"/>
   </appender>
+
+  <!-- 异步错误日志文件输出 -->
   <appender name="async_error_file" class="ch.qos.logback.classic.AsyncAppender">
     <discardingThreshold>0</discardingThreshold>
     <queueSize>512</queueSize>
     <appender-ref ref="error_file"/>
   </appender>
 
+  <!-- 配置特定包的日志级别 -->
   <logger name="cn.qianjingtong" level="info"/>
   <logger name="org.springframework" level="warn"/>
 
+  <!-- 配置根日志记录器 -->
   <root level="info">
     <appender-ref ref="console"/>
     <appender-ref ref="async_console_file"/>
     <appender-ref ref="async_error_file"/>
   </root>
-
 </configuration>

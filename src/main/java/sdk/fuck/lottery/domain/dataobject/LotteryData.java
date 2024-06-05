@@ -1,8 +1,5 @@
-package sdk.fuck.lottery.dataobject;
+package sdk.fuck.lottery.domain.dataobject;
 
-/**
- * Interface for Lottery Data Objects
- */
 public interface LotteryData {
   /**
    * Convert the lottery data object to a CSV line

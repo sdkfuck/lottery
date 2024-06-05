@@ -1,11 +1,22 @@
 # http://editorconfig.org
+# EditorConfig 配置文件，用于统一不同编辑器和 IDE 的编码风格。
+
+# 表示这是根配置文件，所有子目录将继承该配置
 root = true
 
+# 匹配所有文件的配置
 [*]
+# 使用空格进行缩进
 indent_style = space
+# 设置缩进大小为 2 个空格
 indent_size = 2
+# 文件编码格式为 UTF-8
 charset = utf-8
+# 行尾符号为 LF (换行符)
 end_of_line = lf
+# 关闭最大行长度限制
 max_line_length = off
+# 移除行尾的多余空格
 trim_trailing_whitespace = true
+# 在文件末尾插入一个换行符
 insert_final_newline = true
