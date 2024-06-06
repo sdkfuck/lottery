@@ -18,7 +18,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +29,8 @@ import java.util.Map;
  * 彩票数据服务类，用于获取彩票历史数据并保存到CSV文件中。
  */
 @Service
-public class LotteryDataService {
-  private static final Logger logger = LoggerFactory.getLogger(LotteryDataService.class);
+public class LotteryJsoupService {
+  private static final Logger LOGGER = LoggerFactory.getLogger(LotteryJsoupService.class);
 
   /**
    * 获取彩票数据的URL和路径。
@@ -68,7 +70,7 @@ public class LotteryDataService {
         return currentNumElement.attr("value");
       }
     } catch (IOException e) {
-      logger.error("获取最新一期数字时出错", e);
+      LOGGER.error("获取最新一期数字时出错", e);
     }
     return null;
   }
@@ -79,10 +81,9 @@ public class LotteryDataService {
    * @param name  彩票名称（如ssq, dlt）
    * @param start 起始期号
    * @param end   结束期号
-   * @param mode  爬取模式（如train）
    * @return 历史数据的列表
    */
-  public List<Map<String, String>> spider(String name, int start, String end, String mode) {
+  public List<Map<String, String>> spider(String name, int start, String end) {
     List<Map<String, String>> data = new ArrayList<>();
     String[] urlComponents = getUrl(name);
     String url = String.format(urlComponents[0] + urlComponents[1], start, end);
@@ -117,16 +118,14 @@ public class LotteryDataService {
               item.put("蓝球_" + (j + 1), tr.child(6 + j).text().trim());
             }
           } else {
-            logger.warn("抱歉，没有找到数据源！");
+            LOGGER.warn("抱歉，没有找到数据源！");
           }
-          data.add(item);
+          data.add(0, item);  // 将数据插入到列表的开头
         }
-        if ("train".equals(mode)) {
-          saveDataToCSV(data, name);
-        }
+        saveDataToCSV(data, name);
       }
     } catch (IOException e) {
-      logger.error("爬取历史数据时出错", e);
+      LOGGER.error("爬取历史数据时出错", e);
     }
     return data;
   }
@@ -154,9 +153,9 @@ public class LotteryDataService {
         writer.write(String.join(",", values));
         writer.newLine();
       }
-      logger.info("数据已保存到: {}", filePath);
+      LOGGER.info("数据已保存到: {}", filePath);
     } catch (IOException e) {
-      logger.error("保存数据到CSV文件时出错", e);
+      LOGGER.error("保存数据到CSV文件时出错", e);
     }
   }
 
@@ -165,31 +164,105 @@ public class LotteryDataService {
    *
    * @param name 彩票名称（如ssq, dlt）
    */
-  public boolean run(String name) {
-    boolean flag = false;
+  public void run(String name) {
     String currentNumber = getCurrentNumber(name);
     if (currentNumber != null) {
-      logger.info("【{}】最新一期期号：{}", name, currentNumber);
-      logger.info("正在获取【{}】数据......", name);
+      LOGGER.info("【{}】最新一期期号：{}", name, currentNumber);
+      LOGGER.info("正在获取【{}】数据......", name);
       try {
         Path path = Paths.get("data");
         if (!Files.exists(path)) {
           Files.createDirectories(path);
         }
-        List<Map<String, String>> data = spider(name, 1, currentNumber, "train");
+        List<Map<String, String>> data = spider(name, 1, currentNumber);
         if (!data.isEmpty()) {
-          logger.info("【{}】数据准备就绪，共{}期, 下一步可训练模型......", name, data.size());
-          flag = true;
+          LOGGER.info("【{}】数据准备就绪，共{}期, 下一步可训练模型......", name, data.size());
         } else {
-          logger.error("数据文件不存在！");
+          LOGGER.error("数据文件不存在！");
         }
       } catch (IOException e) {
-        logger.error("创建数据目录时出错", e);
+        LOGGER.error("创建数据目录时出错", e);
       }
     } else {
-      logger.error("获取最新一期期号失败！");
+      LOGGER.error("获取最新一期期号失败！");
     }
 
-    return flag;
+  }
+
+  /**
+   * 生成训练数据文件train.csv。
+   *
+   * @param name      彩票名称（如ssq, dlt）
+   * @param timeSteps 时间步长
+   */
+  public void generateTrainCSV(String name, int timeSteps) {
+    generateCSV(name, timeSteps, "train");
+  }
+
+  /**
+   * 生成测试数据文件test.csv。
+   *
+   * @param name      彩票名称（如ssq, dlt）
+   * @param timeSteps 时间步长
+   */
+  public void generateTestCSV(String name, int timeSteps) {
+    generateCSV(name, timeSteps, "test");
+  }
+
+  /**
+   * 生成训练或测试数据文件。
+   *
+   * @param name      彩票名称（如ssq, dlt）
+   * @param timeSteps 时间步长
+   * @param type      数据类型（train或test）
+   */
+  private void generateCSV(String name, int timeSteps, String type) {
+    String historyFilePath = "data/" + name + "_history.csv";
+    String outputFilePath = "data/" + name + "_" + type + ".csv";
+    try (BufferedReader reader = Files.newBufferedReader(Paths.get(historyFilePath));
+         BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFilePath), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+
+      // 读取表头
+      String headerLine = reader.readLine();
+      if (headerLine == null) {
+        LOGGER.error("历史数据文件为空！");
+        return;
+      }
+
+      // 解析表头并创建训练数据表头
+      String[] headers = headerLine.split(",");
+      List<String> csvHeaders = new ArrayList<>();
+      for (int i = timeSteps; i > 0; i--) {
+        for (int j = 1; j < headers.length; j++) { // 从1开始跳过“期数”列
+          csvHeaders.add(headers[j] + "_f");
+        }
+      }
+      for (int j = 1; j < headers.length; j++) { // 从1开始跳过“期数”列
+        csvHeaders.add(headers[j] + "_l");
+      }
+      writer.write(String.join(",", csvHeaders));
+      writer.newLine();
+
+      // 读取数据并生成时间序列
+      List<String[]> data = new ArrayList<>();
+      String line;
+      while ((line = reader.readLine()) != null) {
+        data.add(line.split(","));
+      }
+
+      for (int i = timeSteps; i < data.size(); i++) {
+        List<String> row = new ArrayList<>();
+        for (int j = i - timeSteps; j < i; j++) {  // 不包括当前行作为特征
+          row.addAll(Arrays.asList(data.get(j)).subList(1, data.get(j).length));
+        }
+        // 当前行作为标签
+        row.addAll(Arrays.asList(data.get(i)).subList(1, data.get(i).length));
+        writer.write(String.join(",", row));
+        writer.newLine();
+      }
+      LOGGER.info("{}数据已生成到: {}", type.equals("train") ? "训练" : "测试", outputFilePath);
+    } catch (IOException e) {
+      LOGGER.error("生成{}数据文件时出错", type.equals("train") ? "训练" : "测试", e);
+    }
   }
 }
