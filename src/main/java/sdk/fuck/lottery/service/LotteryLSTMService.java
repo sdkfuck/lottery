@@ -137,11 +137,7 @@ public class LotteryLSTMService {
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
-    SequenceRecordReaderDataSetIterator iterator = new SequenceRecordReaderDataSetIterator(reader, miniBatchSize, numPossibleLabels, labelIndex, true);
-    NormalizerStandardize normalizer = new NormalizerStandardize();
-    normalizer.fit(iterator);
-    iterator.setPreProcessor(normalizer);
-    return iterator;
+    return new SequenceRecordReaderDataSetIterator(reader, miniBatchSize, numPossibleLabels, labelIndex, true);
   }
 
   /**
