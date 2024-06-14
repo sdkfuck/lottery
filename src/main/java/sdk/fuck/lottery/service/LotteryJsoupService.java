@@ -18,9 +18,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +43,7 @@ public class LotteryJsoupService {
   }
 
   /**
-   * 获取最新一期彩票号码。
+   * 获取最新一期彩票期号。
    *
    * @param name 彩票名称（如ssq, dlt）
    * @return 最新一期彩票号码
@@ -102,9 +100,9 @@ public class LotteryJsoupService {
         Document doc = Jsoup.parse(response.toString());
         Elements trs = doc.select("tbody#tdata tr");
         for (Element tr : trs) {
-          Map<String, String> item = new LinkedHashMap<>();  // 使用LinkedHashMap保持插入顺序
+          Map<String, String> item = new LinkedHashMap<>();
           if ("ssq".equals(name)) {
-            item.put("期数", tr.child(0).text().trim());
+            item.put("期号", tr.child(0).text().trim());
             for (int i = 1; i <= 6; i++) {
               item.put("红球_" + i, tr.child(i).text().trim());
             }
@@ -120,7 +118,7 @@ public class LotteryJsoupService {
           } else {
             LOGGER.warn("抱歉，没有找到数据源！");
           }
-          data.add(0, item);  // 将数据插入到列表的开头
+          data.add(item); // 按照爬取的顺序添加数据
         }
         saveDataToCSV(data, name);
       }
@@ -189,80 +187,4 @@ public class LotteryJsoupService {
 
   }
 
-  /**
-   * 生成训练数据文件train.csv。
-   *
-   * @param name      彩票名称（如ssq, dlt）
-   * @param timeSteps 时间步长
-   */
-  public void generateTrainCSV(String name, int timeSteps) {
-    generateCSV(name, timeSteps, "train");
-  }
-
-  /**
-   * 生成测试数据文件test.csv。
-   *
-   * @param name      彩票名称（如ssq, dlt）
-   * @param timeSteps 时间步长
-   */
-  public void generateTestCSV(String name, int timeSteps) {
-    generateCSV(name, timeSteps, "test");
-  }
-
-  /**
-   * 生成训练或测试数据文件。
-   *
-   * @param name      彩票名称（如ssq, dlt）
-   * @param timeSteps 时间步长
-   * @param type      数据类型（train或test）
-   */
-  private void generateCSV(String name, int timeSteps, String type) {
-    String historyFilePath = "data/" + name + "_history.csv";
-    String outputFilePath = "data/" + name + "_" + type + ".csv";
-    try (BufferedReader reader = Files.newBufferedReader(Paths.get(historyFilePath));
-         BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputFilePath), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-
-      // 读取表头
-      String headerLine = reader.readLine();
-      if (headerLine == null) {
-        LOGGER.error("历史数据文件为空！");
-        return;
-      }
-
-      // 解析表头并创建训练数据表头
-      String[] headers = headerLine.split(",");
-      List<String> csvHeaders = new ArrayList<>();
-      for (int i = timeSteps; i > 0; i--) {
-        for (int j = 1; j < headers.length; j++) { // 从1开始跳过“期数”列
-          csvHeaders.add(headers[j] + "_f");
-        }
-      }
-      for (int j = 1; j < headers.length; j++) { // 从1开始跳过“期数”列
-        csvHeaders.add(headers[j] + "_l");
-      }
-      writer.write(String.join(",", csvHeaders));
-      writer.newLine();
-
-      // 读取数据并生成时间序列
-      List<String[]> data = new ArrayList<>();
-      String line;
-      while ((line = reader.readLine()) != null) {
-        data.add(line.split(","));
-      }
-
-      for (int i = timeSteps; i < data.size(); i++) {
-        List<String> row = new ArrayList<>();
-        for (int j = i - timeSteps; j < i; j++) {  // 不包括当前行作为特征
-          row.addAll(Arrays.asList(data.get(j)).subList(1, data.get(j).length));
-        }
-        // 当前行作为标签
-        row.addAll(Arrays.asList(data.get(i)).subList(1, data.get(i).length));
-        writer.write(String.join(",", row));
-        writer.newLine();
-      }
-      LOGGER.info("{}数据已生成到: {}", type.equals("train") ? "训练" : "测试", outputFilePath);
-    } catch (IOException e) {
-      LOGGER.error("生成{}数据文件时出错", type.equals("train") ? "训练" : "测试", e);
-    }
-  }
 }

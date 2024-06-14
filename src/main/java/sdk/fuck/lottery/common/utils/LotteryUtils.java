@@ -3,91 +3,133 @@ package sdk.fuck.lottery.common.utils;
 import cn.hutool.core.util.StrUtil;
 import sdk.fuck.lottery.common.constants.DltConstants;
 import sdk.fuck.lottery.common.constants.SsqConstants;
+import sdk.fuck.lottery.domain.dataobject.DltDO;
+import sdk.fuck.lottery.domain.dataobject.SsqDO;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * LotteryUtils 提供读取和解析彩票数据的实用方法。
+ */
 public class LotteryUtils {
 
   /**
-   * 读取指定彩票名称的CSV文件
+   * 读取指定路径的 CSV 文件并返回行列表。
    *
-   * @param lotteryName 彩票名称
-   * @return 包含CSV文件内容数组列表，每个数组代表CSV文件中的一行
+   * @param filePath CSV 文件路径
+   * @return 文件行列表
    */
-  public static List<Integer[]> readCsvToIntegerList(String lotteryName) {
-    // 获取CSV文件的路径
-    String csvFilePath = getLotteryDataCsvPath(lotteryName);
-    // 用于存储CSV文件数据的列表
-    List<Integer[]> dataList = new ArrayList<>();
-    // 使用try-with-resources语法自动关闭资源
-    try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
-      String line;
-      boolean isFirstLine = true;
-      // 逐行读取CSV文件
-      while ((line = br.readLine()) != null) {
-        if (isFirstLine) {
-          // 跳过表头行
-          isFirstLine = false;
-          continue;
-        }
-        // 按逗号分割每行数据
-        String[] values = line.split(",");
-        // 创建一个长度为8的浮点数组用于存储每行数据
-        Integer[] rowValues = new Integer[8];
-        // 将每个字符串转换为浮点数并存入数组
-        for (int i = 0; i < values.length; i++) {
-          rowValues[i] = Integer.parseInt(values[i]);
-        }
-        // 将数组添加到列表中
-        dataList.add(rowValues);
-      }
+  public static List<String> readCsv(String filePath) {
+    try {
+      return Files.readAllLines(Paths.get(filePath));
     } catch (IOException e) {
-      // 捕获读取文件时的异常并抛出自定义异常
-      throw new RuntimeException("Error reading CSV file", e);
+      throw new RuntimeException(e);
     }
-    // 将列表倒序
-    Collections.reverse(dataList);
-    // 返回包含CSV文件内容的列表
-    return dataList;
   }
 
   /**
-   * 准备红球数据
+   * 解析双色球的 CSV 数据。
+   *
+   * @param lines CSV 文件行列表
+   * @return 解析后的 SsqDO 对象列表
    */
-  public static int[][] prepareRedBallData(List<Integer[]> dataList) {
-    int[][] redBallData = new int[dataList.size()][6]; // 二维数组，不包括期号
-    for (int i = 0; i < dataList.size(); i++) {
-      Integer[] row = dataList.get(i);
-      for (int j = 0; j < 6; j++) {
-        redBallData[i][j] = row[j + 1]; // 红球数据列
+  public static List<SsqDO> parseSsqCsv(List<String> lines) {
+    List<SsqDO> results = new ArrayList<>();
+
+    // 跳过标题行，从第二行开始读取
+    for (int i = 1; i < lines.size(); i++) {
+      String line = lines.get(i);
+      String[] fields = line.split(",");
+      if (fields.length != 8) {
+        throw new IllegalArgumentException("CSV format is incorrect");
       }
+
+      SsqDO ssqDO = new SsqDO();
+      ssqDO.setNumber(fields[0]);
+      ssqDO.setRed01(fields[1]);
+      ssqDO.setRed02(fields[2]);
+      ssqDO.setRed03(fields[3]);
+      ssqDO.setRed04(fields[4]);
+      ssqDO.setRed05(fields[5]);
+      ssqDO.setRed06(fields[6]);
+      ssqDO.setBlue(fields[7]);
+
+      results.add(ssqDO);
     }
-    return redBallData;
+
+    // 反转列表，使期号由小到大排列
+    Collections.reverse(results);
+    return results;
   }
 
   /**
-   * 准备篮球数据
+   * 解析大乐透的 CSV 数据。
+   *
+   * @param lines CSV 文件行列表
+   * @return 解析后的 DltDO 对象列表
    */
-  public static int[][] prepareBlueBallData(List<Integer[]> dataList) {
-    int[][] blueBallData = new int[dataList.size()][1]; // 二维数组，不包括期号
-    for (int i = 0; i < dataList.size(); i++) {
-      Integer[] row = dataList.get(i);
-      blueBallData[i][0] = row[7]; // 篮球数据列
+  public static List<DltDO> parseDltCsv(List<String> lines) {
+    List<DltDO> results = new ArrayList<>();
+
+    // 跳过标题行，从第二行开始读取
+    for (int i = 1; i < lines.size(); i++) {
+      String line = lines.get(i);
+      String[] fields = line.split(",");
+      if (fields.length != 8) {
+        throw new IllegalArgumentException("CSV format is incorrect");
+      }
+
+      DltDO dltDO = new DltDO();
+      dltDO.setNumber(fields[0]);
+      dltDO.setRed01(fields[1]);
+      dltDO.setRed02(fields[2]);
+      dltDO.setRed03(fields[3]);
+      dltDO.setRed04(fields[4]);
+      dltDO.setRed05(fields[5]);
+      dltDO.setBlue01(fields[6]);
+      dltDO.setBlue02(fields[7]);
+
+      results.add(dltDO);
     }
-    return blueBallData;
+
+    // 反转列表，使期号由小到大排列
+    Collections.reverse(results);
+    return results;
   }
 
   /**
-   * 获取指定彩票名称对应的CSV文件路径
+   * 读取并解析双色球的 CSV 文件。
+   *
+   * @return 解析后的 SsqDO 对象列表
+   */
+  public static List<SsqDO> readAndParseSsqCsv() {
+    String filePath = getLotteryDataCsvPath(SsqConstants.NAME);
+    List<String> lines = readCsv(filePath);
+    return parseSsqCsv(lines);
+  }
+
+  /**
+   * 读取并解析大乐透的 CSV 文件。
+   *
+   * @return 解析后的 DltDO 对象列表
+   */
+  public static List<DltDO> readAndParseDltCsv() {
+    String filePath = getLotteryDataCsvPath(DltConstants.NAME);
+    List<String> lines = readCsv(filePath);
+    return parseDltCsv(lines);
+  }
+
+  /**
+   * 获取指定彩票名称对应的 CSV 文件路径。
    *
    * @param lotteryName 彩票名称
-   * @return 对应的CSV文件路径
+   * @return 对应的 CSV 文件路径
    */
   public static String getLotteryDataCsvPath(String lotteryName) {
     // 获取项目根目录的绝对路径
@@ -104,36 +146,12 @@ public class LotteryUtils {
     return csvFilePath;
   }
 
-  public static String getLotteryDataTrainCsvPath(String lotteryName) {
-    // 获取项目根目录的绝对路径
-    String projectRootPath = new File("").getAbsolutePath();
-    // 根据彩票名称返回相应的CSV文件路径
-    String csvFilePath = StrUtil.equals(lotteryName, SsqConstants.NAME) ?
-                         projectRootPath + SsqConstants.SSQ_DATA_TRAIN_PATH :
-                         projectRootPath + DltConstants.DLT_DATA_TRAIN_PATH;
-    // 创建目录
-    File csvFileDir = new File(csvFilePath).getParentFile();
-    if (!csvFileDir.exists() && !csvFileDir.mkdirs()) {
-      throw new RuntimeException("Failed to create directory: " + csvFileDir.getAbsolutePath());
-    }
-    return csvFilePath;
-  }
-
-  public static String getLotteryDataTestCsvPath(String lotteryName) {
-    // 获取项目根目录的绝对路径
-    String projectRootPath = new File("").getAbsolutePath();
-    // 根据彩票名称返回相应的CSV文件路径
-    String csvFilePath = StrUtil.equals(lotteryName, SsqConstants.NAME) ?
-                         projectRootPath + SsqConstants.SSQ_DATA_TEST_PATH :
-                         projectRootPath + DltConstants.DLT_DATA_TEST_PATH;
-    // 创建目录
-    File csvFileDir = new File(csvFilePath).getParentFile();
-    if (!csvFileDir.exists() && !csvFileDir.mkdirs()) {
-      throw new RuntimeException("Failed to create directory: " + csvFileDir.getAbsolutePath());
-    }
-    return csvFilePath;
-  }
-
+  /**
+   * 获取指定彩票名称对应的模型文件路径。
+   *
+   * @param lotteryName 彩票名称
+   * @return 对应的模型文件路径
+   */
   public static String getLotteryModelPath(String lotteryName) {
     // 获取项目根目录的绝对路径
     String projectRootPath = new File("").getAbsolutePath();
@@ -149,4 +167,39 @@ public class LotteryUtils {
     return redModelPath;
   }
 
+  // 打印双色球结果
+  public static void printSsqResults(List<SsqDO> ssqDOList) {
+    System.out.println("双色球结果：");
+    System.out.println("期号\t红球01\t红球02\t红球03\t红球04\t红球05\t红球06\t蓝球");
+
+    for (SsqDO ssqDO : ssqDOList) {
+      System.out.printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%n",
+                        ssqDO.getNumber(),
+                        ssqDO.getRed01(),
+                        ssqDO.getRed02(),
+                        ssqDO.getRed03(),
+                        ssqDO.getRed04(),
+                        ssqDO.getRed05(),
+                        ssqDO.getRed06(),
+                        ssqDO.getBlue());
+    }
+  }
+
+  // 打印大乐透结果
+  public static void printDltResults(List<DltDO> dltDOList) {
+    System.out.println("大乐透结果：");
+    System.out.println("期号\t红球01\t红球02\t红球03\t红球04\t红球05\t蓝球01\t蓝球02");
+
+    for (DltDO dltDO : dltDOList) {
+      System.out.printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%n",
+                        dltDO.getNumber(),
+                        dltDO.getRed01(),
+                        dltDO.getRed02(),
+                        dltDO.getRed03(),
+                        dltDO.getRed04(),
+                        dltDO.getRed05(),
+                        dltDO.getBlue01(),
+                        dltDO.getBlue02());
+    }
+  }
 }

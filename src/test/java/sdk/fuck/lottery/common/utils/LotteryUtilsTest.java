@@ -1,57 +1,53 @@
 package sdk.fuck.lottery.common.utils;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import sdk.fuck.lottery.common.constants.SsqConstants;
+import sdk.fuck.lottery.domain.dataobject.DltDO;
+import sdk.fuck.lottery.domain.dataobject.SsqDO;
 
 import java.util.List;
 
 class LotteryUtilsTest {
 
   @Test
-  void readCsvToIntegerList() {
+  void testReadAndParseSsqCsv() {
+    // 设定一个测试 CSV 文件路径
+    List<SsqDO> ssqDOList = LotteryUtils.readAndParseSsqCsv();
+
+    // 验证结果
+    Assertions.assertNotNull(ssqDOList);
+    Assertions.assertFalse(ssqDOList.isEmpty());
+
+    LotteryUtils.printSsqResults(ssqDOList);
   }
 
   @Test
-  void prepareRedBallData() {
-    List<Integer[]> dataList = LotteryUtils.readCsvToIntegerList(SsqConstants.NAME);
-    int[][] redBallData = LotteryUtils.prepareRedBallData(dataList);
+  void testReadAndParseDltCsv() {
+    // 设定一个测试 CSV 文件路径
+    List<DltDO> dltDOList = LotteryUtils.readAndParseDltCsv();
 
-    // 循环打印红球数据，格式美观
-    System.out.println("Red Ball Data:");
-    for (int i = 0; i < redBallData.length; i++) {
-      System.out.printf("Sample %02d: ", i + 1);
-      for (int j = 0; j < redBallData[i].length; j++) {
-        System.out.printf("%02d ", redBallData[i][j]);
-      }
-      System.out.println();
-    }
+    // 验证结果
+    Assertions.assertNotNull(dltDOList);
+    Assertions.assertFalse(dltDOList.isEmpty());
+
+    LotteryUtils.printDltResults(dltDOList);
   }
 
   @Test
-  void prepareBlueBallData() {
-    List<Integer[]> dataList = LotteryUtils.readCsvToIntegerList(SsqConstants.NAME);
-    int[][] blueBallData = LotteryUtils.prepareBlueBallData(dataList);
+  void testGetLotteryDataCsvPath() {
+    String ssqPath = LotteryUtils.getLotteryDataCsvPath("ssq");
+    Assertions.assertTrue(ssqPath.contains("ssq"));
 
-    // 循环打印蓝球数据，格式美观
-    System.out.println("Blue Ball Data:");
-    for (int i = 0; i < blueBallData.length; i++) {
-      System.out.printf("Sample %02d: ", i + 1);
-      for (int j = 0; j < blueBallData[i].length; j++) {
-        System.out.printf("%02d ", blueBallData[i][j]);
-      }
-      System.out.println();
-    }
+    String dltPath = LotteryUtils.getLotteryDataCsvPath("dlt");
+    Assertions.assertTrue(dltPath.contains("dlt"));
   }
 
   @Test
-  void getLotteryDataCsvPath() {
-  }
+  void testGetLotteryModelPath() {
+    String ssqModelPath = LotteryUtils.getLotteryModelPath("ssq");
+    Assertions.assertTrue(ssqModelPath.contains("ssq"));
 
-  @Test
-  void getLotteryRedModelPath() {
-  }
-
-  @Test
-  void getLotteryBlueModelPath() {
+    String dltModelPath = LotteryUtils.getLotteryModelPath("dlt");
+    Assertions.assertTrue(dltModelPath.contains("dlt"));
   }
 }
